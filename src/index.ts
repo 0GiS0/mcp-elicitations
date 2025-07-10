@@ -1,9 +1,7 @@
 import {
   McpServer,
-  ResourceTemplate,
 } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
-import { CreateMessageResultSchema } from "@modelcontextprotocol/sdk/types.js";
 import { z } from "zod";
 
 // Create an MCP server
@@ -21,9 +19,10 @@ server.registerTool(
     inputSchema: { query: z.string() },
   },
   async ({ query }, extra) => {
-    // Antes de buscar el vídeo, se puede preguntar al usuario si quiere que sean en inglés o en español
-    // y filtrar los resultados en base a eso.
 
+    // Antes de buscar los vídeos se le puede preguntar al usuario sus preferencias
+    // de idioma y número de vídeos a devolver.
+    // Aquí se utiliza una elicitation para preguntar al usuario.
     try {
       const response = await extra.sendRequest(
         {
@@ -37,34 +36,66 @@ server.registerTool(
                   type: "string",
                   description: "The language of the videos",
                 },
+                number_of_videos: {
+                  type: "number",
+                  title: "Number of videos to return",
+                  description: "The number of videos to return in the search results",
+                  minimum: 1,
+                  maximum: 10
+                },
+                translated_or_original: {
+                  type: "string",
+                  title: "Translated or Original",
+                  enum: ["translated", "original"],
+                  enumNames: ["Translated", "Original"]
+                }
               },
             },
-          },
+          }
         },
         z.any()
       );
 
-      const language = response.content.language;
 
-      // Simulate a search operation
-      const results = [
-        {
-          title: `Video about ${query} in ${language}`,
-          url: `https://example.com/video/${query.replace(
-            /\s+/g,
-            "-"
-          )}-${language.toLowerCase()}`,
-          description: `A video discussing ${query} in ${language}.`,
-        },
-        {
-          title: `Another video about ${query} in ${language}`,
-          url: `https://example.com/video/${query.replace(
-            /\s+/g,
-            "-"
-          )}-${language.toLowerCase()}-2`,
-          description: `Another video discussing ${query} in ${language}.`,
-        },
-      ];
+      const inputs = [];
+
+      // Sin embargo, el usuario puede no querer responder a la elicitation,
+      if (response.action == 'accept' && response.content) {
+        // Si el usuario acepta la elicitation, se puede utilizar la respuesta
+        // para personalizar la búsqueda de vídeos.
+        console.log("User accepted elicitation:", response.content);
+
+        inputs.push({
+          language: response.content.language,
+          number_of_videos: response.content.number_of_videos,
+          translated_or_original: response.content.translated_or_original,
+        });
+
+
+      } else {
+        // Si el usuario no acepta la elicitation, se puede utilizar un valor por defecto
+        console.log("User did not accept elicitation, using default values.");
+
+        inputs.push({
+          language: "English",
+          number_of_videos: 5,
+          translated_or_original: "original",
+        });
+
+      }
+
+      
+
+      
+      // Obtener los valores de los inputs (preferencias del usuario o por defecto)
+      const { language, number_of_videos, translated_or_original } = inputs[0];
+
+      // Generar dinámicamente la cantidad de resultados solicitados
+      const results = Array.from({ length: number_of_videos }, (_, i) => ({
+        title: `${i === 0 ? "" : "Another "}video about ${query} in ${language} (${translated_or_original})`,
+        url: `https://example.com/video/${query.replace(/\s+/g, "-")}-${language.toLowerCase()}${translated_or_original === "translated" ? "-translated" : ""}${i > 0 ? `-${i + 1}` : ""}`,
+        description: `${i === 0 ? "A" : "Another"} video discussing ${query} in ${language} (${translated_or_original}).`,
+      }));
 
       return {
         content: [
@@ -78,6 +109,7 @@ server.registerTool(
           })),
         ],
       };
+   
     } catch (error) {
       console.error("Error during elicitation:", error);
       return {
