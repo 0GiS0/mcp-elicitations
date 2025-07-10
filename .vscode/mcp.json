@@ -4,7 +4,13 @@
             "command": "node",
             "args": [
                 "./dist/src/index.js"
-            ]           
+            ],
+            "dev": {
+                "watch": "src/**/*.ts",
+                "debug": {
+                    "type": "node"
+                }
+            }
         }
     }
 }

@@ -1,7 +1,7 @@
 {
   "name": "mcp-elicitations",
   "version": "1.0.0",
-  "description": "¡Hola developer 👋🏻! En este repo encontrarás un ejemplo de cómo funciona las elicitations en Model Context Protocol... pero antes de nada ¿esto qué es lo que es?",
+  "description": "¡Hola developer 👋🏻! En este repo encontrarás un ejemplo de cómo funciona las elicitations en Model Context Protocol.",
   "main": "index.js",
   "scripts": {
     "start": "node build/index.js",
