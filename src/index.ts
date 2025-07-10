@@ -3,6 +3,7 @@ import {
 } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { z } from "zod";
+import chalk from "chalk";
 
 // Crear un servidor MCP
 const server = new McpServer({
@@ -20,10 +21,14 @@ server.registerTool(
   },
   async ({ query }, extra) => {
 
+    console.log(chalk.blue("🔍 ") + chalk.cyan("Iniciando búsqueda de videos para:") + chalk.yellow(` "${query}"`));
+
     // Antes de buscar los videos, se puede preguntar al usuario sus preferencias
     // de idioma y cantidad de videos a devolver.
     // Aquí se utiliza una elicitation para consultar al usuario.
     try {
+      console.log(chalk.magenta("🤔 ") + chalk.white("Creando elicitation para obtener preferencias del usuario..."));
+      
       const response = await extra.sendRequest(
         {
           method: "elicitation/create",
@@ -61,7 +66,7 @@ server.registerTool(
       // El usuario puede decidir no responder a la elicitation,
       if (response.action == 'accept' && response.content) {
         // Si el usuario responde, se usan sus preferencias para personalizar la búsqueda.
-        console.log("El usuario aceptó la elicitation:", response.content);
+        console.log(chalk.green("✅ ") + chalk.white("El usuario aceptó la elicitation:"), chalk.gray(JSON.stringify(response.content, null, 2)));
 
         inputs.push({
           language: response.content.language,
@@ -71,7 +76,7 @@ server.registerTool(
 
       } else {
         // Si el usuario no responde, se usan valores por defecto.
-        console.log("El usuario no aceptó la elicitation, usando valores por defecto.");
+        console.log(chalk.yellow("⚠️  ") + chalk.white("El usuario no aceptó la elicitation, usando valores por defecto."));
 
         inputs.push({
           language: "English",
@@ -84,12 +89,22 @@ server.registerTool(
       // Obtener los valores de las preferencias del usuario o los valores por defecto
       const { language, number_of_videos, translated_or_original } = inputs[0];
 
+      console.log(chalk.blue("⚙️  ") + chalk.white("Configuración final:"));
+      console.log(chalk.gray("   📝 Idioma:"), chalk.cyan(language));
+      console.log(chalk.gray("   🔢 Cantidad de videos:"), chalk.cyan(number_of_videos));
+      console.log(chalk.gray("   🌐 Tipo:"), chalk.cyan(translated_or_original));
+
+      console.log(chalk.green("🚀 ") + chalk.white("Generando resultados de videos..."));
+
       // Generar dinámicamente la cantidad de resultados solicitados
       const results = Array.from({ length: number_of_videos }, (_, i) => ({
         title: `${i === 0 ? "" : "Otro "}video sobre ${query} en ${language} (${translated_or_original})`,
         url: `https://example.com/video/${query.replace(/\s+/g, "-")}-${language.toLowerCase()}${translated_or_original === "translated" ? "-translated" : ""}${i > 0 ? `-${i + 1}` : ""}`,
         description: `${i === 0 ? "Un" : "Otro"} video que trata sobre ${query} en ${language} (${translated_or_original}).`,
       }));
+
+      console.log(chalk.green("🎯 ") + chalk.white("¡Búsqueda completada exitosamente!"));
+      console.log(chalk.blue("📊 ") + chalk.white(`Se generaron ${results.length} resultados`));
 
       return {
         content: [
@@ -106,7 +121,7 @@ server.registerTool(
    
     } catch (error) {
       // Manejo de errores durante la elicitation
-      console.error("Error durante la elicitation:", error);
+      console.error(chalk.red("❌ ") + chalk.white("Error durante la elicitation:"), chalk.red(error));
       return {
         content: [
           {
@@ -120,5 +135,7 @@ server.registerTool(
 );
 
 // Iniciar la recepción de mensajes por stdin y el envío por stdout
+console.log(chalk.green("🚀 ") + chalk.white("Iniciando servidor MCP..."));
 const transport = new StdioServerTransport();
 await server.connect(transport);
+console.log(chalk.green("✅ ") + chalk.white("Servidor MCP conectado y listo para recibir solicitudes!"));
