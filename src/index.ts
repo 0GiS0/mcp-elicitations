@@ -32,7 +32,7 @@ server.registerTool(
     // - Validamos la entrada del usuario
     try {
       console.log(chalk.magenta("🤔 ") + chalk.white("Creando elicitation para obtener preferencias del usuario..."));
-      
+
       const response = await extra.sendRequest(
         {
           method: "elicitation/create",
@@ -82,7 +82,7 @@ server.registerTool(
       if (response.action === 'accept' && response.content) {
         // Si el usuario acepta y proporciona datos, usar sus preferencias
         console.log(chalk.green("✅ ") + chalk.white("El usuario aceptó la elicitation:"), chalk.gray(JSON.stringify(response.content, null, 2)));
-        
+
         userPreferences = {
           language: response.content.language || userPreferences.language,
           number_of_videos: response.content.number_of_videos || userPreferences.number_of_videos,
@@ -92,11 +92,11 @@ server.registerTool(
       } else if (response.action === 'decline') {
         // Si el usuario declina explícitamente, usar valores por defecto pero informar
         console.log(chalk.yellow("❌ ") + chalk.white("El usuario declinó configurar preferencias, usando valores por defecto."));
-        
+
       } else if (response.action === 'cancel') {
         // Si el usuario cancela, usar valores por defecto y tal vez ofrecer alternativas
         console.log(chalk.yellow("⚠️ ") + chalk.white("El usuario canceló la configuración, usando valores por defecto."));
-        
+
       } else {
         // Caso de respuesta inesperada
         console.log(chalk.red("⚠️ ") + chalk.white("Respuesta inesperada de elicitation, usando valores por defecto."));
@@ -115,7 +115,7 @@ server.registerTool(
       // Generar dinámicamente la cantidad de resultados solicitados
       const results = Array.from({ length: number_of_videos }, (_, i) => {
         const typeDisplayName = translated_or_original === "translated" ? "traducido" : "original";
-        
+
         return {
           title: `${i === 0 ? "" : "Otro "}video sobre ${query} en ${language} (${typeDisplayName})`,
           url: `https://example.com/video/${query.replace(/\s+/g, "-")}-${language.toLowerCase()}${translated_or_original === "translated" ? "-translated" : ""}${i > 0 ? `-${i + 1}` : ""}`,
@@ -130,7 +130,7 @@ server.registerTool(
         content: [
           {
             type: "text" as const,
-            text: `Se encontraron ${results.length} videos sobre "${query}" en ${getLanguageDisplayName(language)}:`,
+            text: `Se encontraron ${results.length} videos sobre "${query}" en ${language}:`,
           },
           ...results.map((video) => ({
             type: "text" as const,
@@ -138,31 +138,30 @@ server.registerTool(
           })),
         ],
       };
-   
+
     } catch (error) {
       // Manejo de errores durante la elicitation según la especificación MCP
       console.error(chalk.red("❌ ") + chalk.white("Error durante la elicitation:"), chalk.red(error));
-      
+
       // Usar valores por defecto en caso de error y continuar con la operación
       const defaultPreferences = {
         language: "english",
         number_of_videos: 5,
         translated_or_original: "original",
       };
-      
+
       console.log(chalk.yellow("🔄 ") + chalk.white("Continuando con valores por defecto debido al error."));
-      
+
       const results = Array.from({ length: defaultPreferences.number_of_videos }, (_, i) => {
-        const languageDisplayName = getLanguageDisplayName(defaultPreferences.language);
         const typeDisplayName = defaultPreferences.translated_or_original === "translated" ? "traducido" : "original";
-        
+
         return {
-          title: `${i === 0 ? "" : "Otro "}video sobre ${query} en ${languageDisplayName} (${typeDisplayName})`,
+          title: `${i === 0 ? "" : "Otro "}video sobre ${query} en ${defaultPreferences.language} (${typeDisplayName})`,
           url: `https://example.com/video/${query.replace(/\s+/g, "-")}-${defaultPreferences.language.toLowerCase()}${defaultPreferences.translated_or_original === "translated" ? "-translated" : ""}${i > 0 ? `-${i + 1}` : ""}`,
-          description: `${i === 0 ? "Un" : "Otro"} video que trata sobre ${query} en ${languageDisplayName} (${typeDisplayName}).`,
+          description: `${i === 0 ? "Un" : "Otro"} video que trata sobre ${query} en ${defaultPreferences.language} (${typeDisplayName}).`,
         };
       });
-      
+
       return {
         content: [
           {
