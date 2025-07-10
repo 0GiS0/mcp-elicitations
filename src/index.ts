@@ -4,50 +4,50 @@ import {
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { z } from "zod";
 
-// Create an MCP server
+// Crear un servidor MCP
 const server = new McpServer({
   name: "elicitation-demo",
   version: "1.0.0",
 });
 
-// Add a search videos tool
+// Registrar una herramienta para buscar videos
 server.registerTool(
   "search-videos",
   {
-    title: "Search Videos",
-    description: "Search for videos on a specific topic",
+    title: "Buscar Videos",
+    description: "Busca videos sobre un tema específico",
     inputSchema: { query: z.string() },
   },
   async ({ query }, extra) => {
 
-    // Antes de buscar los vídeos se le puede preguntar al usuario sus preferencias
-    // de idioma y número de vídeos a devolver.
-    // Aquí se utiliza una elicitation para preguntar al usuario.
+    // Antes de buscar los videos, se puede preguntar al usuario sus preferencias
+    // de idioma y cantidad de videos a devolver.
+    // Aquí se utiliza una elicitation para consultar al usuario.
     try {
       const response = await extra.sendRequest(
         {
           method: "elicitation/create",
           params: {
-            message: "Would you like the videos in English or Spanish?",
+            message: "¿Prefieres los videos en inglés o en español?",
             requestedSchema: {
               type: "object",
               properties: {
                 language: {
                   type: "string",
-                  description: "The language of the videos",
+                  description: "El idioma de los videos",
                 },
                 number_of_videos: {
                   type: "number",
-                  title: "Number of videos to return",
-                  description: "The number of videos to return in the search results",
+                  title: "Cantidad de videos a mostrar",
+                  description: "Cantidad de videos a devolver en los resultados de búsqueda",
                   minimum: 1,
                   maximum: 10
                 },
                 translated_or_original: {
                   type: "string",
-                  title: "Translated or Original",
+                  title: "Traducido u Original",
                   enum: ["translated", "original"],
-                  enumNames: ["Translated", "Original"]
+                  enumNames: ["Traducido", "Original"]
                 }
               },
             },
@@ -56,14 +56,12 @@ server.registerTool(
         z.any()
       );
 
-
       const inputs = [];
 
-      // Sin embargo, el usuario puede no querer responder a la elicitation,
+      // El usuario puede decidir no responder a la elicitation,
       if (response.action == 'accept' && response.content) {
-        // Si el usuario acepta la elicitation, se puede utilizar la respuesta
-        // para personalizar la búsqueda de vídeos.
-        console.log("User accepted elicitation:", response.content);
+        // Si el usuario responde, se usan sus preferencias para personalizar la búsqueda.
+        console.log("El usuario aceptó la elicitation:", response.content);
 
         inputs.push({
           language: response.content.language,
@@ -71,10 +69,9 @@ server.registerTool(
           translated_or_original: response.content.translated_or_original,
         });
 
-
       } else {
-        // Si el usuario no acepta la elicitation, se puede utilizar un valor por defecto
-        console.log("User did not accept elicitation, using default values.");
+        // Si el usuario no responde, se usan valores por defecto.
+        console.log("El usuario no aceptó la elicitation, usando valores por defecto.");
 
         inputs.push({
           language: "English",
@@ -84,24 +81,21 @@ server.registerTool(
 
       }
 
-      
-
-      
-      // Obtener los valores de los inputs (preferencias del usuario o por defecto)
+      // Obtener los valores de las preferencias del usuario o los valores por defecto
       const { language, number_of_videos, translated_or_original } = inputs[0];
 
       // Generar dinámicamente la cantidad de resultados solicitados
       const results = Array.from({ length: number_of_videos }, (_, i) => ({
-        title: `${i === 0 ? "" : "Another "}video about ${query} in ${language} (${translated_or_original})`,
+        title: `${i === 0 ? "" : "Otro "}video sobre ${query} en ${language} (${translated_or_original})`,
         url: `https://example.com/video/${query.replace(/\s+/g, "-")}-${language.toLowerCase()}${translated_or_original === "translated" ? "-translated" : ""}${i > 0 ? `-${i + 1}` : ""}`,
-        description: `${i === 0 ? "A" : "Another"} video discussing ${query} in ${language} (${translated_or_original}).`,
+        description: `${i === 0 ? "Un" : "Otro"} video que trata sobre ${query} en ${language} (${translated_or_original}).`,
       }));
 
       return {
         content: [
           {
             type: "text" as const,
-            text: `Found ${results.length} videos about "${query}" in ${language}:`,
+            text: `Se encontraron ${results.length} videos sobre "${query}" en ${language}:`,
           },
           ...results.map((video) => ({
             type: "text" as const,
@@ -111,12 +105,13 @@ server.registerTool(
       };
    
     } catch (error) {
-      console.error("Error during elicitation:", error);
+      // Manejo de errores durante la elicitation
+      console.error("Error durante la elicitation:", error);
       return {
         content: [
           {
             type: "text" as const,
-            text: "An error occurred while trying to elicit the language preference. Please try again.",
+            text: "Ocurrió un error al intentar consultar la preferencia de idioma. Por favor, inténtalo de nuevo.",
           },
         ],
       };
@@ -124,6 +119,6 @@ server.registerTool(
   }
 );
 
-// Start receiving messages on stdin and sending messages on stdout
+// Iniciar la recepción de mensajes por stdin y el envío por stdout
 const transport = new StdioServerTransport();
 await server.connect(transport);
