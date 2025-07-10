@@ -3,7 +3,7 @@
         "elicitation-demo": {
             "command": "node",
             "args": [
-                "/Users/gis/mcp-elicitations/dist/src/index.js"
+                "./dist/src/index.js"
             ]           
         }
     }
