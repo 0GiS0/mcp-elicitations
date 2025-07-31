@@ -1,5 +1,7 @@
 # ¿Quieres aprender a usar las **elicitations** de MCP? 🚀
 
+> **🌐 Languages:** [🇪🇸 Español](README.md) | [🇺🇸 English](README.en.md)
+
 ¡Hola developer! 👋🏻 En este repositorio tienes un ejemplo para que puedas comprender cómo funcionan las **elicitations** en Model Context Protocol (MCP) a través de un ejemplo práctico: un buscador de videos interactivo (pero fake 🤓)
 
 ## 🤔 ¿Qué son las elicitations?
